@@ -44,7 +44,7 @@ class SearchIp(QThread, QObject):
         self.ip_from_ip = Worker.ip_list(self)
         self.parent.label.setText("")
         global app_off
-        self.touch_ip = []
+        self.touch_ip = {}
         self.done_ip_score = 0
         wb = openpyxl.load_workbook(
             filename=r"\\192.168.160.100\Winelab\Розница Винлаб\21. IT\03- Реестры\\Реестр магазинов SAP.xlsx"
@@ -60,25 +60,24 @@ class SearchIp(QThread, QObject):
                     i = f"{unspace_ip[:-1]}{last_digit}"
                     self.ip_from_xls.append(i)
         del self.ip_from_xls[0:2]
-        self.ip_from_xls = self.ip_from_xls[:100]
 
         self.parent.setProgressMax(self.ip_from_xls)
         with ThreadPoolExecutor(max_workers=10) as e:
             jobs = [e.submit(self.touch_test, ii) for ii in self.ip_from_xls]
             e.shutdown()
-        print("THREAD DONE !")
-        with open("data" + os.sep + "touch_ip.txt", "w") as touch_file:
-            for i in self.touch_ip:
-                touch_file.write(i)
-                touch_file.write("\n")
+
+        json.dump(self.touch_ip, open("data" + os.sep + "touch_ip.json", "w"))
         self.touch_ip = []
-        self.parent.label.setText("Список IP в файле touch_ip.txt")
+        if self.count == 0:
+            self.parent.label.setText("Новых тачей нет")
+        else:
+            self.parent.label.setText("Список IP в файле touch_ip.json")
         # self.parent.ip_time_value.setText(
         #     MainWidget.ip_stat() + "  строк: " + MainWidget.rows_count("ip.txt")
         # )
         self.count = 0
         self.parent.touch_time_value.setText(
-            MainWidget.rows_count(self, "touch_ip.txt") + "шт."
+            MainWidget.rows_count(self, "touch_ip.json") + "шт."
         )
 
     def touch_test(
@@ -106,31 +105,29 @@ class SearchIp(QThread, QObject):
             client.close()
 
             if "WEB" in data or "web" in data:
-                self.touch_ip.append(ip)
+                self.touch_ip[ip] = "touch"
                 self.count += 1
                 self.parent.label.setText(f"Нашел новый ТАЧ по адресу : {ip}")
                 self.parent.touch_time_value.setText(f"{self.count}шт.")
+            else:
+                self.touch_ip[ip] = "no_touch"
         if ip in self.ip_from_ip:
             self.parent.label.setText(f"Такой ТАЧ уже в списке: {ip}")
 
     def extend_ip(self):
-        with open("data" + os.sep + "touch_ip.txt", "r") as file:
-            self.touch_ip = [line.rstrip() for line in list(file)]
+        self.touch_ip = json.load(open("data" + os.sep + "touch_ip.json", "r"))
 
-        self.ip_from_ip.extend(self.touch_ip)
+        self.ip_from_ip.update(self.touch_ip)
         print(len(self.ip_from_ip))
-        with open("data" + os.sep + "ip.txt", "w") as write_ip:
-            for i in self.ip_from_ip:
-                write_ip.write(i)
-                write_ip.write("\n")
-        os.remove("data" + os.sep + "touch_ip.txt")
+        json.dump(self.ip_from_ip, open("data" + os.sep + "ip.json", "w"))
+        os.remove("data" + os.sep + "touch_ip.json")
         self.parent.ip_time_value.setText(
             MainWidget.ip_stat(self)
             + "  строк: "
-            + MainWidget.rows_count(self, "ip.txt")
+            + MainWidget.rows_count(self, "ip.json")
         )
         self.parent.touch_time_value.setText(
-            MainWidget.rows_count(self, "touch_ip.txt") + "шт."
+            MainWidget.rows_count(self, "touch_ip.json") + "шт."
         )
         self.touch_ip = []
 
@@ -203,13 +200,11 @@ class Worker(QThread, QLabel):
         client.close()
 
     def ip_list(self):  # заполняем список IP из файла
-        with open(
-            "data" + os.sep + "ip.txt", "r"
-        ) as ip_read:  # читаем список IP из файла
-            #         cashes = list(ip_read)  # преобразуем в список
-            # # убираем символ \n с конца строки
-            self.cashes = [line.rstrip() for line in list(ip_read)]
+        if os.path.exists("data" + os.sep + "ip.json"):
+            self.cashes = json.load(open("data" + os.sep + "ip.json", "r"))
             return self.cashes
+        else:
+            return {}
 
     def online_test(self, ip):  # в сети касса или нет
         return ping(ip, timeout=1)
@@ -390,9 +385,9 @@ class MainWidget(QWidget, Ui_Form):
         self.progressBar2.setMaximum(1)
         self.progressBar2.setValue(0)
         self.ip_time_value.setText(
-            self.ip_stat() + "  строк: " + self.rows_count("ip.txt")
+            self.ip_stat() + "  строк: " + self.rows_count("ip.json")
         )
-        self.touch_time_value.setText(self.rows_count("touch_ip.txt") + "шт.")
+        self.touch_time_value.setText(self.rows_count("touch_ip.json") + "шт.")
         self.stop_prog = False
 
         self.label.setText("")
@@ -419,30 +414,30 @@ class MainWidget(QWidget, Ui_Form):
     #     self.label.setText("Должно быть два файла ip и touch_ip !!!")
 
     def rows_count(self, file):
+        c = 0
         if os.path.exists("data" + os.sep + file):
-            with open("data" + os.sep + file, "r") as file:
-                rows = [line.rstrip() for line in list(file)]
-                return str(len(rows))
+            rows = json.load(open("data" + os.sep + file, "r"))
+            return str(len(rows))
         else:
             return "0"
 
     def ip_stat(self):
-        if os.path.exists(r"data\ip.txt"):
-            ip_stat = os.stat("data\ip.txt")
+        if os.path.exists(r"data\ip.json"):
+            ip_stat = os.stat("data\ip.json")
             return datetime.datetime.fromtimestamp(ip_stat.st_mtime).strftime(
                 "%H:%M %d-%m-%Y"
             )
         else:
-            return "файла ip.txt нет"
+            return "файла ip.json нет"
 
     def touch_stat(self):
-        if os.path.exists(r"data\touch_ip.txt"):
-            ip_stat = os.stat(r"data\touch_ip.txt")
+        if os.path.exists(r"data\touch_ip.json"):
+            ip_stat = os.stat(r"data\touch_ip.json")
             return datetime.datetime.fromtimestamp(ip_stat.st_mtime).strftime(
                 "%H:%M %d-%m-%Y"
             )
         else:
-            return "файла touch_ip.txt нет"
+            return "файла touch_ip.json нет"
 
     def setProgressMax(self, i):
         self.progressBar2.setMaximum(len(i))
