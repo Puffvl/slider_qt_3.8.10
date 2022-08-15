@@ -12,7 +12,7 @@ from PySide2 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(440, 361)
+        Form.resize(438, 385)
         sizePolicy = QtWidgets.QSizePolicy(
             QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred
         )
@@ -60,14 +60,14 @@ class Ui_Form(object):
         self.downButton.setShortcut("")
         self.downButton.setObjectName("downButton")
         self.progressBar = QtWidgets.QProgressBar(Form)
-        self.progressBar.setGeometry(QtCore.QRect(20, 230, 401, 16))
+        self.progressBar.setGeometry(QtCore.QRect(20, 250, 401, 16))
         font = QtGui.QFont()
         font.setFamily("Georgia")
         self.progressBar.setFont(font)
         self.progressBar.setProperty("value", 24)
         self.progressBar.setObjectName("progressBar")
         self.label = QtWidgets.QLabel(Form)
-        self.label.setGeometry(QtCore.QRect(30, 320, 381, 31))
+        self.label.setGeometry(QtCore.QRect(30, 340, 381, 31))
         palette = QtGui.QPalette()
         brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
         brush.setStyle(QtCore.Qt.SolidPattern)
@@ -213,21 +213,21 @@ class Ui_Form(object):
         self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.label.setObjectName("label")
         self.progressBar2 = QtWidgets.QProgressBar(Form)
-        self.progressBar2.setGeometry(QtCore.QRect(20, 250, 401, 23))
+        self.progressBar2.setGeometry(QtCore.QRect(20, 270, 401, 23))
         font = QtGui.QFont()
         font.setFamily("Georgia")
         self.progressBar2.setFont(font)
         self.progressBar2.setProperty("value", 24)
         self.progressBar2.setObjectName("progressBar2")
         self.text_time_last = QtWidgets.QLabel(Form)
-        self.text_time_last.setGeometry(QtCore.QRect(140, 280, 71, 30))
+        self.text_time_last.setGeometry(QtCore.QRect(140, 300, 71, 30))
         font = QtGui.QFont()
         font.setFamily("Georgia")
         self.text_time_last.setFont(font)
         self.text_time_last.setAlignment(QtCore.Qt.AlignCenter)
         self.text_time_last.setObjectName("text_time_last")
         self.time_last = QtWidgets.QLabel(Form)
-        self.time_last.setGeometry(QtCore.QRect(240, 280, 61, 30))
+        self.time_last.setGeometry(QtCore.QRect(240, 300, 61, 30))
         font = QtGui.QFont()
         font.setFamily("Georgia")
         self.time_last.setFont(font)
@@ -283,7 +283,7 @@ class Ui_Form(object):
         self.getIpButton.setAutoDefault(True)
         self.getIpButton.setObjectName("getIpButton")
         self.ip_time_txt = QtWidgets.QLabel(Form)
-        self.ip_time_txt.setGeometry(QtCore.QRect(80, 170, 91, 16))
+        self.ip_time_txt.setGeometry(QtCore.QRect(80, 170, 101, 16))
         font = QtGui.QFont()
         font.setPointSize(8)
         font.setBold(True)
@@ -321,7 +321,7 @@ class Ui_Form(object):
         self.ren_file_button.setAutoDefault(True)
         self.ren_file_button.setObjectName("ren_file_button")
         self.ip_time_txt_2 = QtWidgets.QLabel(Form)
-        self.ip_time_txt_2.setGeometry(QtCore.QRect(50, 200, 161, 16))
+        self.ip_time_txt_2.setGeometry(QtCore.QRect(50, 210, 161, 16))
         font = QtGui.QFont()
         font.setPointSize(8)
         font.setBold(True)
@@ -329,13 +329,29 @@ class Ui_Form(object):
         self.ip_time_txt_2.setFont(font)
         self.ip_time_txt_2.setObjectName("ip_time_txt_2")
         self.touch_time_value = QtWidgets.QLabel(Form)
-        self.touch_time_value.setGeometry(QtCore.QRect(220, 200, 211, 16))
+        self.touch_time_value.setGeometry(QtCore.QRect(220, 210, 211, 16))
         font = QtGui.QFont()
         font.setPointSize(8)
         font.setBold(True)
         font.setWeight(75)
         self.touch_time_value.setFont(font)
         self.touch_time_value.setObjectName("touch_time_value")
+        self.ip_time_txt_3 = QtWidgets.QLabel(Form)
+        self.ip_time_txt_3.setGeometry(QtCore.QRect(80, 190, 111, 16))
+        font = QtGui.QFont()
+        font.setPointSize(8)
+        font.setBold(True)
+        font.setWeight(75)
+        self.ip_time_txt_3.setFont(font)
+        self.ip_time_txt_3.setObjectName("ip_time_txt_3")
+        self.touch_count = QtWidgets.QLabel(Form)
+        self.touch_count.setGeometry(QtCore.QRect(210, 190, 211, 16))
+        font = QtGui.QFont()
+        font.setPointSize(8)
+        font.setBold(True)
+        font.setWeight(75)
+        self.touch_count.setFont(font)
+        self.touch_count.setObjectName("touch_count")
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -368,7 +384,7 @@ class Ui_Form(object):
         self.ip_time_txt.setText(
             _translate(
                 "Form",
-                '<html><head/><body><p align="center">Файл ip.txt от :</p></body></html>',
+                '<html><head/><body><p align="center">Файл ip.json от :</p></body></html>',
             )
         )
         self.ip_time_value.setText(
@@ -384,6 +400,17 @@ class Ui_Form(object):
             )
         )
         self.touch_time_value.setText(
+            _translate(
+                "Form", '<html><head/><body><p align="center"><br/></p></body></html>'
+            )
+        )
+        self.ip_time_txt_3.setText(
+            _translate(
+                "Form",
+                '<html><head/><body><p align="center">Кол-во тач касс :</p></body></html>',
+            )
+        )
+        self.touch_count.setText(
             _translate(
                 "Form", '<html><head/><body><p align="center"><br/></p></body></html>'
             )

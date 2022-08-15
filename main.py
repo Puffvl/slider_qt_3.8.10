@@ -79,6 +79,7 @@ class SearchIp(QThread, QObject):
         self.parent.touch_time_value.setText(
             MainWidget.rows_count(self, "touch_ip.json") + "шт."
         )
+        self.parent.touch_count.setText(self.touch_count() + "шт.")
 
     def touch_test(
         self, ip
@@ -129,7 +130,15 @@ class SearchIp(QThread, QObject):
         self.parent.touch_time_value.setText(
             MainWidget.rows_count(self, "touch_ip.json") + "шт."
         )
+        self.parent.touch_count.setText(self.touch_count() + "шт.")
         self.touch_ip = []
+
+    def touch_count(self):
+        count = 0
+        for i, y in self.ip_from_ip.items():
+            if y == "touch":
+                count += 1
+        return str(count)
 
     def run(self):
         self.getIp()
@@ -250,6 +259,7 @@ class Worker(QThread, QLabel):
 
     def copy_file(self):
         self.parent.setProgressMax(self.cashes)
+        self.parent.progressBar.setMaximum(len(self.images_file_list()))
         for ip in self.cashes:
             self.start_time = datetime.datetime.now()
             self.comm2.signal.emit(self.score_ip)
@@ -290,13 +300,11 @@ class Worker(QThread, QLabel):
 
                 else:
                     self.parent.label.setText("не тач касса")
-                    time.sleep(2)
                     self.err = True
                     self.write_log(ip, "не тач касса")
                     continue
             else:
                 self.parent.label.setText("недоступна")
-                time.sleep(2)
                 self.err = True
                 self.write_log(ip, "недоступен")
                 continue
@@ -388,6 +396,7 @@ class MainWidget(QWidget, Ui_Form):
             self.ip_stat() + "  строк: " + self.rows_count("ip.json")
         )
         self.touch_time_value.setText(self.rows_count("touch_ip.json") + "шт.")
+        self.touch_count.setText(self.searchip.touch_count() + "шт.")
         self.stop_prog = False
 
         self.label.setText("")
