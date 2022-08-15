@@ -34,6 +34,7 @@ class Communicator2(QObject):  # класс для передачи сигнал
 class SearchIp(QThread, QObject):
     def __init__(self, parent=None):
         QThread.__init__(self, parent)
+        self.count = 0
         self.parent = parent
         self.comm2 = Communicator2()
         self.comm2.signal.connect(parent.progress_bar_foo2)
@@ -66,15 +67,16 @@ class SearchIp(QThread, QObject):
             jobs = [e.submit(self.touch_test, ii) for ii in self.ip_from_xls]
             e.shutdown()
         print("THREAD DONE !")
-        # with open("data" + os.sep + "touch_ip.txt", "w") as touch_file:
-        #     for i in self.touch_ip:
-        #         touch_file.write(i)
-        #         touch_file.write("\n")
-        # self.touch_ip = []
+        with open("data" + os.sep + "touch_ip.txt", "w") as touch_file:
+            for i in self.touch_ip:
+                touch_file.write(i)
+                touch_file.write("\n")
+        self.touch_ip = []
         self.parent.label.setText("Список IP в файле touch_ip.txt")
         # self.parent.ip_time_value.setText(
         #     MainWidget.ip_stat() + "  строк: " + MainWidget.rows_count("ip.txt")
         # )
+        self.count = 0
         self.parent.touch_time_value.setText(
             MainWidget.rows_count(self, "touch_ip.txt") + "шт."
         )
@@ -105,26 +107,32 @@ class SearchIp(QThread, QObject):
 
             if "WEB" in data or "web" in data:
                 self.touch_ip.append(ip)
+                self.count += 1
                 self.parent.label.setText(f"Нашел новый ТАЧ по адресу : {ip}")
+                self.parent.touch_time_value.setText(f"{self.count}шт.")
         if ip in self.ip_from_ip:
             self.parent.label.setText(f"Такой ТАЧ уже в списке: {ip}")
 
-    # def extend_ip(self):
-    #     self.ip_from_ip.extend(self.touch_ip)
-    #     with open("data" + os.sep + "ip.txt", "w") as write_ip:
-    #         for i in self.ip_from_ip:
-    #             write_ip.write(i)
-    #             write_ip.write("\n")
-    #     os.remove("data" + os.sep + "touch_ip.txt")
-    #     self.parent.ip_time_value.setText(
-    #         MainWidget.ip_stat(self)
-    #         + "  строк: "
-    #         + MainWidget.rows_count(self, "ip.txt")
-    #     )
-    #     self.parent.touch_time_value.setText(
-    #         MainWidget.rows_count(self, "touch_ip.txt") + "шт."
-    #     )
-    #     self.touch_ip = []
+    def extend_ip(self):
+        with open("data" + os.sep + "touch_ip.txt", "r") as file:
+            self.touch_ip = [line.rstrip() for line in list(file)]
+
+        self.ip_from_ip.extend(self.touch_ip)
+        print(len(self.ip_from_ip))
+        with open("data" + os.sep + "ip.txt", "w") as write_ip:
+            for i in self.ip_from_ip:
+                write_ip.write(i)
+                write_ip.write("\n")
+        os.remove("data" + os.sep + "touch_ip.txt")
+        self.parent.ip_time_value.setText(
+            MainWidget.ip_stat(self)
+            + "  строк: "
+            + MainWidget.rows_count(self, "ip.txt")
+        )
+        self.parent.touch_time_value.setText(
+            MainWidget.rows_count(self, "touch_ip.txt") + "шт."
+        )
+        self.touch_ip = []
 
     def run(self):
         self.getIp()
@@ -394,7 +402,7 @@ class MainWidget(QWidget, Ui_Form):
         # self.getSlides.clicked.connect(self.getSlides)
         self.downButton.clicked.connect(self.rename_slides)
         self.downButton.clicked.connect(self.worker.start)
-        # self.ren_file_button.clicked.connect(self.searchip.extend_ip)
+        self.ren_file_button.clicked.connect(self.searchip.extend_ip)
 
     # def rename_file(self):
 
