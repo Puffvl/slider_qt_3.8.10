@@ -42,6 +42,7 @@ class SearchIp(QThread, QObject):
 
     def getIp(self):
         self.ip_from_ip = Worker.ip_list(self)
+        print(self.ip_from_ip)
         self.parent.label.setText("")
         global app_off
         self.touch_ip = {}
@@ -89,29 +90,36 @@ class SearchIp(QThread, QObject):
         self.done_ip_score += 1
         self.comm2.signal.emit(self.done_ip_score)
         if ip not in self.ip_from_ip:
-            try:
-                client = paramiko.SSHClient()
-                client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                client.connect(
-                    hostname=ip, username="tc", password="324012", port="22", timeout=10
+            if Worker.online_test(self, ip):
+                try:
+                    client = paramiko.SSHClient()
+                    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    client.connect(
+                        hostname=ip,
+                        username="tc",
+                        password="324012",
+                        port="22",
+                        timeout=10,
+                    )
+
+                except:
+                    return False
+                stdin, stdout, stderr = client.exec_command(
+                    "ls /mnt/sda1/tce/storage/crystal-cash"
                 )
 
-            except:
-                return False
-            stdin, stdout, stderr = client.exec_command(
-                "ls /mnt/sda1/tce/storage/crystal-cash"
-            )
+                data = str(stdout.read())
+                client.close()
 
-            data = str(stdout.read())
-            client.close()
-
-            if "WEB" in data or "web" in data:
-                self.touch_ip[ip] = "touch"
-                self.count += 1
-                self.parent.label.setText(f"Нашел новый ТАЧ по адресу : {ip}")
-                self.parent.touch_time_value.setText(f"{self.count}шт.")
+                if "WEB" in data or "web" in data:
+                    self.touch_ip[ip] = "touch"
+                    self.count += 1
+                    self.parent.label.setText(f"Нашел новый ТАЧ по адресу : {ip}")
+                    self.parent.touch_time_value.setText(f"{self.count}шт.")
+                else:
+                    self.touch_ip[ip] = "no_touch"
             else:
-                self.touch_ip[ip] = "no_touch"
+                self.touch_ip[ip] = "false"
         if ip in self.ip_from_ip:
             self.parent.label.setText(f"Такой ТАЧ уже в списке: {ip}")
 
@@ -386,6 +394,7 @@ class MainWidget(QWidget, Ui_Form):
         self.slides_path = os.path.join(self.slider_path, "slides")
         self.worker = Worker(self)
         self.searchip = SearchIp(self)
+        self.searchip.setTerminationEnabled(enabled=True)
         self.progressBar.setMinimum(0)
         self.progressBar.setMaximum(len(Worker.images_file_list(self)))
         self.progressBar.setValue(0)
