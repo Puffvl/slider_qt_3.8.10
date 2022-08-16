@@ -263,7 +263,7 @@ class Ui_Form(object):
         self.label_2.setFont(font)
         self.label_2.setObjectName("label_2")
         self.getIpButton = QtWidgets.QPushButton(Form)
-        self.getIpButton.setGeometry(QtCore.QRect(100, 110, 101, 51))
+        self.getIpButton.setGeometry(QtCore.QRect(180, 110, 111, 51))
         sizePolicy = QtWidgets.QSizePolicy(
             QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
         )
@@ -283,7 +283,7 @@ class Ui_Form(object):
         self.getIpButton.setAutoDefault(True)
         self.getIpButton.setObjectName("getIpButton")
         self.ip_time_txt = QtWidgets.QLabel(Form)
-        self.ip_time_txt.setGeometry(QtCore.QRect(80, 170, 101, 16))
+        self.ip_time_txt.setGeometry(QtCore.QRect(80, 170, 110, 16))
         font = QtGui.QFont()
         font.setPointSize(8)
         font.setBold(True)
@@ -298,30 +298,8 @@ class Ui_Form(object):
         font.setWeight(75)
         self.ip_time_value.setFont(font)
         self.ip_time_value.setObjectName("ip_time_value")
-        self.ren_file_button = QtWidgets.QPushButton(Form)
-        self.ren_file_button.setGeometry(QtCore.QRect(270, 110, 101, 51))
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Fixed
-        )
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.ren_file_button.sizePolicy().hasHeightForWidth()
-        )
-        self.ren_file_button.setSizePolicy(sizePolicy)
-        font = QtGui.QFont()
-        font.setFamily("Georgia")
-        font.setPointSize(7)
-        font.setBold(False)
-        font.setWeight(50)
-        self.ren_file_button.setFont(font)
-        self.ren_file_button.setFocusPolicy(QtCore.Qt.WheelFocus)
-        self.ren_file_button.setLayoutDirection(QtCore.Qt.RightToLeft)
-        self.ren_file_button.setAutoFillBackground(False)
-        self.ren_file_button.setAutoDefault(True)
-        self.ren_file_button.setObjectName("ren_file_button")
         self.ip_time_txt_2 = QtWidgets.QLabel(Form)
-        self.ip_time_txt_2.setGeometry(QtCore.QRect(50, 210, 161, 16))
+        self.ip_time_txt_2.setGeometry(QtCore.QRect(80, 210, 170, 16))
         font = QtGui.QFont()
         font.setPointSize(8)
         font.setBold(True)
@@ -329,7 +307,7 @@ class Ui_Form(object):
         self.ip_time_txt_2.setFont(font)
         self.ip_time_txt_2.setObjectName("ip_time_txt_2")
         self.touch_time_value = QtWidgets.QLabel(Form)
-        self.touch_time_value.setGeometry(QtCore.QRect(220, 210, 211, 16))
+        self.touch_time_value.setGeometry(QtCore.QRect(250, 210, 181, 20))
         font = QtGui.QFont()
         font.setPointSize(8)
         font.setBold(True)
@@ -389,9 +367,6 @@ class Ui_Form(object):
         )
         self.ip_time_value.setText(
             _translate("Form", "<html><head/><body><p><br/></p></body></html>")
-        )
-        self.ren_file_button.setText(
-            _translate("Form", "Добавить новые \n" " ip в список")
         )
         self.ip_time_txt_2.setText(
             _translate(

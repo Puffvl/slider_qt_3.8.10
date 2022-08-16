@@ -1,4 +1,5 @@
 import datetime
+from itertools import count
 from socket import timeout
 from PySide2.QtWidgets import QLabel, QWidget, QApplication
 from PySide2.QtCore import QObject, QThread, Signal, Slot
@@ -34,18 +35,16 @@ class Communicator2(QObject):  # класс для передачи сигнал
 class SearchIp(QThread, QObject):
     def __init__(self, parent=None):
         QThread.__init__(self, parent)
-        self.count = 0
         self.parent = parent
         self.comm2 = Communicator2()
         self.comm2.signal.connect(parent.progress_bar_foo2)
         self.ip_from_ip = Worker.ip_list(self)
 
     def getIp(self):
-        self.ip_from_ip = Worker.ip_list(self)
-        print(self.ip_from_ip)
         self.parent.label.setText("")
+        self.count = 0
         global app_off
-        self.touch_ip = {}
+        # self.touch_ip = {}
         self.done_ip_score = 0
         wb = openpyxl.load_workbook(
             filename=r"\\192.168.160.100\Winelab\Розница Винлаб\21. IT\03- Реестры\\Реестр магазинов SAP.xlsx"
@@ -67,20 +66,21 @@ class SearchIp(QThread, QObject):
             jobs = [e.submit(self.touch_test, ii) for ii in self.ip_from_xls]
             e.shutdown()
 
-        json.dump(self.touch_ip, open("data" + os.sep + "touch_ip.json", "w"))
-        self.touch_ip = []
+        # json.dump(self.touch_ip, open("data" + os.sep + "touch_ip.json", "w"))
+        # self.touch_ip = []
         if self.count == 0:
             self.parent.label.setText("Новых тачей нет")
         else:
-            self.parent.label.setText("Список IP в файле touch_ip.json")
-        # self.parent.ip_time_value.setText(
-        #     MainWidget.ip_stat() + "  строк: " + MainWidget.rows_count("ip.txt")
-        # )
+            self.parent.label.setText("Новые IP внесены в ip.json")
         self.count = 0
-        self.parent.touch_time_value.setText(
-            MainWidget.rows_count(self, "touch_ip.json") + "шт."
+        self.parent.ip_time_value.setText(
+            MainWidget.ip_stat(self)
+            + "  строк: "
+            + MainWidget.rows_count(self, "ip.json")
         )
+
         self.parent.touch_count.setText(self.touch_count() + "шт.")
+        json.dump(self.ip_from_ip, open("data" + os.sep + "ip.json", "w"))
 
     def touch_test(
         self, ip
@@ -112,34 +112,32 @@ class SearchIp(QThread, QObject):
                 client.close()
 
                 if "WEB" in data or "web" in data:
-                    self.touch_ip[ip] = "touch"
+                    self.ip_from_ip[ip] = "touch"
                     self.count += 1
                     self.parent.label.setText(f"Нашел новый ТАЧ по адресу : {ip}")
                     self.parent.touch_time_value.setText(f"{self.count}шт.")
                 else:
-                    self.touch_ip[ip] = "no_touch"
+                    self.ip_from_ip[ip] = "no_touch"
             else:
-                self.touch_ip[ip] = "false"
+                self.ip_from_ip[ip] = "false"
         if ip in self.ip_from_ip:
             self.parent.label.setText(f"Такой ТАЧ уже в списке: {ip}")
 
-    def extend_ip(self):
-        self.touch_ip = json.load(open("data" + os.sep + "touch_ip.json", "r"))
+    # def extend_ip(self):
+    #     self.touch_ip = json.load(open("data" + os.sep + "touch_ip.json", "r"))
 
-        self.ip_from_ip.update(self.touch_ip)
-        print(len(self.ip_from_ip))
-        json.dump(self.ip_from_ip, open("data" + os.sep + "ip.json", "w"))
-        os.remove("data" + os.sep + "touch_ip.json")
-        self.parent.ip_time_value.setText(
-            MainWidget.ip_stat(self)
-            + "  строк: "
-            + MainWidget.rows_count(self, "ip.json")
-        )
-        self.parent.touch_time_value.setText(
-            MainWidget.rows_count(self, "touch_ip.json") + "шт."
-        )
-        self.parent.touch_count.setText(self.touch_count() + "шт.")
-        self.touch_ip = []
+    #     self.ip_from_ip.update(self.touch_ip)
+    #     print(len(self.ip_from_ip))
+    #     json.dump(self.ip_from_ip, open("data" + os.sep + "ip.json", "w"))
+    #     os.remove("data" + os.sep + "touch_ip.json")
+    #     self.parent.ip_time_value.setText(
+    #         MainWidget.ip_stat(self)
+    #         + "  строк: "
+    #         + MainWidget.rows_count(self, "ip.json")
+    #     )
+
+    #     self.parent.touch_count.setText(self.touch_count() + "шт.")
+    #     self.touch_ip = []
 
     def touch_count(self):
         count = 0
@@ -167,7 +165,7 @@ class Worker(QThread, QLabel):
         self.score_ip = 0
         self.time_score = 0
         self.time_dur_sum = 0
-        self.cashes = []
+        self.cashes = {}
         self.parent = parent
         self.err = False
         self.touch_ip = []
@@ -182,7 +180,7 @@ class Worker(QThread, QLabel):
         elif re.findall(
             r"([0-9]{1,3}[\.]){3}[0-9]{1,3}", self.textRead
         ):  # если юзверь вписал IP
-            self.cashes.append(self.textRead)  # то в пусой список кладем введеный IP
+            self.cashes[self.textRead] = "touch"  # то в пусой список кладем введеный IP
             self.copy_file()  # и копируем по IP
         else:
             self.parent.label.setText("Это не IP адрес !")
@@ -269,53 +267,54 @@ class Worker(QThread, QLabel):
         self.parent.setProgressMax(self.cashes)
         self.parent.progressBar.setMaximum(len(self.images_file_list()))
         for ip in self.cashes:
-            self.start_time = datetime.datetime.now()
-            self.comm2.signal.emit(self.score_ip)
-            self.score_file = 0
-            self.score_ip += 1
-            if self.online_test(ip):
-                if self.touch_test(ip):
-                    self.rm_slides(ip)
-                    with ThreadPoolExecutor(max_workers=5) as e:
-                        jobs = [
-                            e.submit(self.threding_slides, ip, ii, self.slides_path)
-                            for ii in self.images_file_list()
-                        ]
-                        e.shutdown()
+            if self.cashes[ip] == "touch":
+                self.start_time = datetime.datetime.now()
+                self.comm2.signal.emit(self.score_ip)
+                self.score_file = 0
+                self.score_ip += 1
+                if self.online_test(ip):
+                    if self.touch_test(ip):
+                        self.rm_slides(ip)
+                        with ThreadPoolExecutor(max_workers=5) as e:
+                            jobs = [
+                                e.submit(self.threding_slides, ip, ii, self.slides_path)
+                                for ii in self.images_file_list()
+                            ]
+                            e.shutdown()
 
-                    ssh = self.createSSHClient(ip, "22", "tc", "324012")
-                    scp = SCPClient(ssh.get_transport())
-                    scp.put(
-                        r"%s" % self.slider_path + "/data/" + "slider.json",
-                        r"/mnt/sda1/tce/storage/crystal-cash/web/config",
-                    )
-                    scp.put(
-                        r"%s" % self.slider_path + "/data/" + "cfg.json",
-                        r"/mnt/sda1/tce/storage/crystal-cash/web/config",
-                    )
-                    ssh.close()
-                    self.end_time = datetime.datetime.now()
-                    time_remaining = self.one_ip_duration(
-                        self.start_time, self.end_time
-                    ) * (len(self.cashes) - (self.cashes.index(ip) + 1))
-                    time_remaining_m = int(float(time_remaining)) // 60
-                    time_remaining_s = (
-                        int(float(time_remaining)) - time_remaining_m * 60
-                    )
-                    self.parent.time_last.setText(
-                        f"{str(time_remaining_m)}m {str(time_remaining_s)}s"
-                    )
+                        ssh = self.createSSHClient(ip, "22", "tc", "324012")
+                        scp = SCPClient(ssh.get_transport())
+                        scp.put(
+                            r"%s" % self.slider_path + "/data/" + "slider.json",
+                            r"/mnt/sda1/tce/storage/crystal-cash/web/config",
+                        )
+                        scp.put(
+                            r"%s" % self.slider_path + "/data/" + "cfg.json",
+                            r"/mnt/sda1/tce/storage/crystal-cash/web/config",
+                        )
+                        ssh.close()
+                        self.end_time = datetime.datetime.now()
+                        time_remaining = self.one_ip_duration(
+                            self.start_time, self.end_time
+                        ) * (len(self.cashes) - (list(self.cashes).index(ip) + 1))
+                        time_remaining_m = int(float(time_remaining)) // 60
+                        time_remaining_s = (
+                            int(float(time_remaining)) - time_remaining_m * 60
+                        )
+                        self.parent.time_last.setText(
+                            f"{str(time_remaining_m)}m {str(time_remaining_s)}s"
+                        )
 
+                    else:
+                        self.parent.label.setText("не тач касса")
+                        self.err = True
+                        self.write_log(ip, "не тач касса")
+                        continue
                 else:
-                    self.parent.label.setText("не тач касса")
+                    self.parent.label.setText("недоступна")
                     self.err = True
-                    self.write_log(ip, "не тач касса")
+                    self.write_log(ip, "недоступен")
                     continue
-            else:
-                self.parent.label.setText("недоступна")
-                self.err = True
-                self.write_log(ip, "недоступен")
-                continue
 
         self.comm2.signal.emit(self.score_ip)
         if self.err:
@@ -323,7 +322,7 @@ class Worker(QThread, QLabel):
         else:
             self.parent.label.setText("Готово !!!")
 
-        self.cashes = []
+        self.cashes = {}
         self.score_file = 0
         self.score_ip = 0
 
@@ -404,7 +403,7 @@ class MainWidget(QWidget, Ui_Form):
         self.ip_time_value.setText(
             self.ip_stat() + "  строк: " + self.rows_count("ip.json")
         )
-        self.touch_time_value.setText(self.rows_count("touch_ip.json") + "шт.")
+
         self.touch_count.setText(self.searchip.touch_count() + "шт.")
         self.stop_prog = False
 
@@ -415,7 +414,7 @@ class MainWidget(QWidget, Ui_Form):
         # self.getSlides.clicked.connect(self.getSlides)
         self.downButton.clicked.connect(self.rename_slides)
         self.downButton.clicked.connect(self.worker.start)
-        self.ren_file_button.clicked.connect(self.searchip.extend_ip)
+        # self.ren_file_button.clicked.connect(self.searchip.extend_ip)
 
     # def rename_file(self):
 
@@ -435,7 +434,10 @@ class MainWidget(QWidget, Ui_Form):
         c = 0
         if os.path.exists("data" + os.sep + file):
             rows = json.load(open("data" + os.sep + file, "r"))
-            return str(len(rows))
+            for i in rows:
+                if rows[i] == "touch" or rows[i] == "no_touch":
+                    c += 1
+            return str(c)
         else:
             return "0"
 
