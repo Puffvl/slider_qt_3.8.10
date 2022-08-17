@@ -272,7 +272,7 @@ class Worker(QThread, QLabel):
         self.parent.progressBar2.setMaximum(len(self.touch_cashes))
 
         with ThreadPoolExecutor(max_workers=4) as s:
-            jobs = [s.submit(self.copy_file, ip) for ip in self.touch_cashes[:10]]
+            jobs = [s.submit(self.copy_file, ip) for ip in self.touch_cashes]
             s.shutdown()
         if self.err:
             self.parent.label.setText("С ошибками ! См. лог")
@@ -280,7 +280,6 @@ class Worker(QThread, QLabel):
             self.parent.label.setText("Готово !!!")
 
     def copy_file(self, ip):
-        # self.parent.setProgressMax(self.touch_cashes)
         self.start_time = datetime.datetime.now()
         self.comm2.signal.emit(self.score_ip)
         self.score_file = 0
