@@ -169,19 +169,20 @@ class Worker(QThread, QLabel):
         self.parent = parent
         self.err = False
         self.touch_ip = []
+        self.touch_cashes = []
 
     def lineIpRead(self):  # считываем IP из поля ввода
         self.textRead = self.parent.ipValue.text()
         self.textRead = self.textRead.replace(" ", "")
         if self.textRead == "":  # если в поле пусто то берем IP из файла
             self.ip_list()  # то берем IP из файла
-            self.copy_file()
+            self.thread_ip()
 
         elif re.findall(
             r"([0-9]{1,3}[\.]){3}[0-9]{1,3}", self.textRead
         ):  # если юзверь вписал IP
             self.cashes[self.textRead] = "touch"  # то в пусой список кладем введеный IP
-            self.copy_file()  # и копируем по IP
+            self.thread_ip()  # и копируем по IP
         else:
             self.parent.label.setText("Это не IP адрес !")
             time.sleep(2)
@@ -263,68 +264,64 @@ class Worker(QThread, QLabel):
         else:
             return False
 
-    def copy_file(self):
-        self.parent.setProgressMax(self.cashes)
+    def thread_ip(self):
+        for k, v in self.cashes.items():
+            if v == "touch":
+                self.touch_cashes.append(k)
         self.parent.progressBar.setMaximum(len(self.images_file_list()))
-        for ip in self.cashes:
-            if self.cashes[ip] == "touch":
-                self.start_time = datetime.datetime.now()
-                self.comm2.signal.emit(self.score_ip)
-                self.score_file = 0
-                self.score_ip += 1
-                if self.online_test(ip):
-                    if self.touch_test(ip):
-                        self.rm_slides(ip)
-                        with ThreadPoolExecutor(max_workers=5) as e:
-                            jobs = [
-                                e.submit(self.threding_slides, ip, ii, self.slides_path)
-                                for ii in self.images_file_list()
-                            ]
-                            e.shutdown()
+        self.parent.progressBar2.setMaximum(len(self.touch_cashes))
 
-                        ssh = self.createSSHClient(ip, "22", "tc", "324012")
-                        scp = SCPClient(ssh.get_transport())
-                        scp.put(
-                            r"%s" % self.slider_path + "/data/" + "slider.json",
-                            r"/mnt/sda1/tce/storage/crystal-cash/web/config",
-                        )
-                        scp.put(
-                            r"%s" % self.slider_path + "/data/" + "cfg.json",
-                            r"/mnt/sda1/tce/storage/crystal-cash/web/config",
-                        )
-                        ssh.close()
-                        self.end_time = datetime.datetime.now()
-                        time_remaining = self.one_ip_duration(
-                            self.start_time, self.end_time
-                        ) * (len(self.cashes) - (list(self.cashes).index(ip) + 1))
-                        time_remaining_m = int(float(time_remaining)) // 60
-                        time_remaining_s = (
-                            int(float(time_remaining)) - time_remaining_m * 60
-                        )
-                        self.parent.time_last.setText(
-                            f"{str(time_remaining_m)}m {str(time_remaining_s)}s"
-                        )
-
-                    else:
-                        self.parent.label.setText("не тач касса")
-                        self.err = True
-                        self.write_log(ip, "не тач касса")
-                        continue
-                else:
-                    self.parent.label.setText("недоступна")
-                    self.err = True
-                    self.write_log(ip, "недоступен")
-                    continue
-
-        self.comm2.signal.emit(self.score_ip)
+        with ThreadPoolExecutor(max_workers=4) as s:
+            jobs = [s.submit(self.copy_file, ip) for ip in self.touch_cashes[:10]]
+            s.shutdown()
         if self.err:
             self.parent.label.setText("С ошибками ! См. лог")
         else:
             self.parent.label.setText("Готово !!!")
 
-        self.cashes = {}
+    def copy_file(self, ip):
+        # self.parent.setProgressMax(self.touch_cashes)
+        self.start_time = datetime.datetime.now()
+        self.comm2.signal.emit(self.score_ip)
         self.score_file = 0
-        self.score_ip = 0
+        self.score_ip += 1
+        if self.online_test(ip):
+            if self.touch_test(ip):
+                self.rm_slides(ip)
+                with ThreadPoolExecutor(max_workers=4) as e:
+                    jobs = [
+                        e.submit(self.threding_slides, ip, ii, self.slides_path)
+                        for ii in self.images_file_list()
+                    ]
+                    e.shutdown()
+                ssh = self.createSSHClient(ip, "22", "tc", "324012")
+                scp = SCPClient(ssh.get_transport())
+                scp.put(
+                    r"%s" % self.slider_path + "/data/" + "slider.json",
+                    r"/mnt/sda1/tce/storage/crystal-cash/web/config",
+                )
+                scp.put(
+                    r"%s" % self.slider_path + "/data/" + "cfg.json",
+                    r"/mnt/sda1/tce/storage/crystal-cash/web/config",
+                )
+                ssh.close()
+                self.end_time = datetime.datetime.now()
+                time_remaining = self.one_ip_duration(
+                    self.start_time, self.end_time
+                ) * (len(self.touch_cashes) - (list(self.touch_cashes).index(ip) + 1))
+                time_remaining_m = int(float(time_remaining)) // 60
+                time_remaining_s = int(float(time_remaining)) - time_remaining_m * 60
+                self.parent.time_last.setText(
+                    f"{str(time_remaining_m)}m {str(time_remaining_s)}s"
+                )
+
+        else:
+            self.parent.label.setText("недоступна")
+            self.err = True
+            self.write_log(ip, "недоступен")
+
+        self.comm2.signal.emit(self.score_ip)
+        self.score_file = 0
 
     def json_func(self):
         cut_s, cut_l = set(), set()
