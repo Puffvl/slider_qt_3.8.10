@@ -23,10 +23,6 @@ build/main/Tree-01.toc
 build/main/Tree-02.toc
 build/main/warn-main.txt
 build/main/xref-main.html
-data/cfg.json
-data/ip.txt
-data/old_ip.txt
-data/slider.json
 dist/main.exe
 Lib/site-packages/_black_version.py
 Lib/site-packages/_cffi_backend.cp38-win_amd64.pyd
@@ -7607,7 +7603,6 @@ Scripts/deactivate.bat
 Scripts/futurize-script.py
 Scripts/futurize.exe
 Scripts/main.spec
-Scripts/menu.py
 Scripts/pasteurize-script.py
 Scripts/pasteurize.exe
 Scripts/ping3.exe
@@ -7640,7 +7635,7 @@ slides/3_L_1366_768.jpg
 slides/3_S_1280_800.jpg
 slides/3_S_1366_768.jpg
 ip.json
-data/touch_ip.txt
-data/touch_ip.json
 menu — копия.ui
+data/cfg.json
 data/events.log
+data/ip.json
